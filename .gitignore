@@ -1,0 +1,5 @@
+.vagrant
+hosts
+id_rsa*
+*.box
+packer_cache
