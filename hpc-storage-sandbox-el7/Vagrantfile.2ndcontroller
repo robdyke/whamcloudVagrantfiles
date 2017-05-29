@@ -27,7 +27,7 @@ Vagrant.configure("2") do |config|
 	# sl<vmax><vmin>: SLES <vmax> SP<vmin>, e.g. sl121 = SLES 12 sp1
 	# ub<vmax><vmin>: Ubuntu <vmax>.<vmin>, e.g. ub1604 = Ubuntu 16.04
 	#
-	# Each host in the virtual cluster will be automatically assigned 
+	# Each host in the virtual cluster will be automatically assigned
 	# a name based on the prefix and the function of the host
 	# The following examples are nodes running CentOS 7.3:
 	# ct73-mds1 = 1st metadata server
@@ -125,7 +125,7 @@ __EOF"
 						"--variant", "fixed"]
 				end
 				if mds_idx==1 && not(File.exist?("#{vdisk_root}/mdt0.vdi"))
-                			vbx.customize ["createmedium", "disk",
+					vbx.customize ["createmedium", "disk",
 						"--filename", "#{vdisk_root}/mdt0.vdi",
 						"--size", "5120",
 						"--format", "VDI",
@@ -226,7 +226,7 @@ __EOF"
 				# (node 1 in each HA pair)
 				if oss_idx % 2 == 1
 					(osd_min..osd_max).each do |ost|
-				 		if not(File.exist?("#{vdisk_root}/ost#{ost}.vdi"))
+						if not(File.exist?("#{vdisk_root}/ost#{ost}.vdi"))
 							vbx.customize ["createmedium", "disk",
 								"--filename", "#{vdisk_root}/ost#{ost}.vdi",
 								"--size", "5120",
