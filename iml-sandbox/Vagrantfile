@@ -114,6 +114,21 @@ def configure_lustre_network(config)
   SHELL
 end
 
+def install_lustre_zfs(config)
+  config.vm.provision 'install-lustre-zfs', type: 'shell', run: 'never', inline: <<-SHELL
+    yum clean all
+    yum install -y lustre-zfs
+    genhostid
+  SHELL
+end
+
+def install_lustre_ldiskfs(config)
+  config.vm.provision 'install-lustre-ldiskfs', type: 'shell', run: 'never', inline: <<-SHELL
+    yum clean all
+    yum install -y lustre-ldiskfs
+  SHELL
+end
+
 Vagrant.configure('2') do |config|
   config.vm.box = 'centos/7'
 
@@ -304,6 +319,10 @@ __EOF
       cleanup_storage_server mds
 
       configure_lustre_network mds
+
+      install_lustre_zfs mds
+
+      install_lustre_ldiskfs mds
     end
   end
 
@@ -357,6 +376,10 @@ __EOF
       cleanup_storage_server oss
 
       configure_lustre_network oss
+
+      install_lustre_zfs oss
+
+      install_lustre_ldiskfs oss
     end
   end
 
