@@ -1,9 +1,19 @@
 # vi: set ft=ruby :
+
+command = ARGV[0]
+option = ARGV[1]
+
+if (command == "rsync" && option == '--reverse') then
+  system('vagrant ssh-config > ssh_config')
+  system('rsync -avH -e "ssh -F ./ssh_config" default:/tmp .')
+  exit
+end
+
 Vagrant.configure("2") do |config|
   config.vm.box = "manager-for-lustre/lustre-mellanox-el75"
   config.vm.box_version = "0.0.1"
   config.vbguest.auto_update = false
-  config.vm.synced_folder '.', '/vagrant', disabled: true
+  config.vm.synced_folder ".", "/vagrant", disabled: true
   config.ssh.username = "root"
   config.ssh.password = "vagrant"
   config.ssh.insert_key = "true"
@@ -32,5 +42,11 @@ Vagrant.configure("2") do |config|
                         git checkout $LUSTRE_BRANCH
                         sh autogen.sh && ./configure && make rpms dkms-rpm
                       SHELL
+
+  config.vm.provision 'upload-mellanox',
+                      type: 'file',
+                      run: 'never',
+                      source: ENV['MLNX_OFED_LINUX'],
+                      destination: "/tmp/#{ENV['MLNX_OFED_LINUX']}"
 end
 
