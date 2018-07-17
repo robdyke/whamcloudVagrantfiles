@@ -2,6 +2,8 @@
 
 command = ARGV[0]
 option = ARGV[1]
+MLNX_OFED_LINUX ||= ENV['MLNX_OFED_LINUX'] ||= ''
+LUSTRE_BRANCH ||= ENV['LUSTRE_BRANCH'] ||= 'b2_10'
 
 if (command == "rsync" && option == '--reverse') then
   system('vagrant ssh-config > ssh_config')
@@ -18,23 +20,25 @@ Vagrant.configure("2") do |config|
   config.ssh.password = "vagrant"
   config.ssh.insert_key = "true"
 
-  config.vm.provision 'build-mellanox',
-                      type: 'shell',
-                      run: 'never',
-                      env: { 'MLNX_OFED_LINUX' => ENV['MLNX_OFED_LINUX'] },
-                      inline: <<-SHELL
-                        cd /tmp
-                        tar xvf $MLNX_OFED_LINUX
-                        cd MLNX_OFED_LINUX-*-rhel7.5-x86_64/
-                        ./mlnxofedinstall --add-kernel-support
-                        cd /tmp/MLNX_OFED_LINUX*_lustre.x86_64
-                        tar xvf MLNX_OFED_LINUX*-ext.tgz
-                      SHELL
+  if (MLNX_OFED_LINUX != '') then
+    config.vm.provision 'build-mellanox',
+                        type: 'shell',
+                        run: 'never',
+                        env: { 'MLNX_OFED_LINUX' => MLNX_OFED_LINUX },
+                        inline: <<-SHELL
+                          cd /tmp
+                          tar xvf $MLNX_OFED_LINUX
+                          cd MLNX_OFED_LINUX-*-rhel7.5-x86_64/
+                          ./mlnxofedinstall --add-kernel-support
+                          cd /tmp/MLNX_OFED_LINUX*_lustre.x86_64
+                          tar xvf MLNX_OFED_LINUX*-ext.tgz
+                        SHELL
+  end
 
   config.vm.provision 'build-lustre-rpms',
                       type: 'shell',
                       run: 'never',
-                      env: { 'branch' => ENV['LUSTRE_BRANCH'] },
+                      env: { 'branch' => LUSTRE_BRANCH },
                       inline: <<-SHELL
                         cd /tmp
                         git clone git://git.whamcloud.com/fs/lustre-release.git
@@ -43,10 +47,12 @@ Vagrant.configure("2") do |config|
                         sh autogen.sh && ./configure && make rpms dkms-rpm
                       SHELL
 
-  config.vm.provision 'upload-mellanox',
-                      type: 'file',
-                      run: 'never',
-                      source: ENV['MLNX_OFED_LINUX'],
-                      destination: "/tmp/#{ENV['MLNX_OFED_LINUX']}"
+  if (MLNX_OFED_LINUX != '') then
+    config.vm.provision 'upload-mellanox',
+                        type: 'file',
+                        run: 'never',
+                        source: MLNX_OFED_LINUX,
+                        destination: "/tmp/#{MLNX_OFED_LINUX}"
+  end
 end
 
