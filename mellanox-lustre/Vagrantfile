@@ -44,7 +44,7 @@ Vagrant.configure("2") do |config|
                         git clone git://git.whamcloud.com/fs/lustre-release.git
                         cd lustre-release
                         git checkout $LUSTRE_BRANCH
-                        sh autogen.sh && ./configure && make rpms dkms-rpm
+                        sh autogen.sh && ./configure && make rpms
                       SHELL
 
   if (MLNX_OFED_LINUX != '') then
