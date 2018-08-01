@@ -12,7 +12,7 @@ if (command == "rsync" && option == '--reverse') then
 end
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "manager-for-lustre/lustre-mellanox-el75"
+  config.vm.box = "manager-for-lustre/lustre-mellanox-el74"
   config.vm.box_version = "0.0.1"
   config.vbguest.auto_update = false
   config.vm.synced_folder ".", "/vagrant", disabled: true
@@ -28,7 +28,7 @@ Vagrant.configure("2") do |config|
                         inline: <<-SHELL
                           cd /tmp
                           tar xvf $MLNX_OFED_LINUX
-                          cd MLNX_OFED_LINUX-*-rhel7.5-x86_64/
+                          cd MLNX_OFED_LINUX-*-rhel7.*-x86_64/
                           ./mlnxofedinstall --add-kernel-support
                           cd /tmp/MLNX_OFED_LINUX*_lustre.x86_64
                           tar xvf MLNX_OFED_LINUX*-ext.tgz
