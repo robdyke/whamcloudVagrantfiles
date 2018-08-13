@@ -534,6 +534,15 @@ SHELL
       # Lustre / application network
       provision_lnet_net c, "3#{i}"
 
+      config.vm.provision 'install-lustre-client',
+                          type: 'shell',
+                          inline: <<-SHELL
+                            yum-config-manager --add-repo https://downloads.whamcloud.com/public/lustre/lustre-2.10.4/el7/client/
+                            yum-config-manager --save --setopt='*.gpgcheck=1' downloads.whamcloud.com_public_lustre_lustre-2.10.4_el7_client_
+                            yum-config-manager --save --setopt='*.gpgcheck=0' downloads.whamcloud.com_public_lustre_lustre-2.10.4_el7_client_
+                            yum -y install lustre-client
+                          SHELL
+
       provision_mdns c, 'eth1'
     end
   end
