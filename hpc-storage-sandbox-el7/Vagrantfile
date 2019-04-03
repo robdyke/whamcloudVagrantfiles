@@ -92,6 +92,20 @@ __EOF"
 			ip: "#{mgmt_net_pfx}.10",
 			netmask: "255.255.255.0"
 		adm.vm.provision "shell", inline: "mkdir -m 0700 -p /root/.ssh; cp /vagrant/id_rsa /root/.ssh/.; chmod 0600 /root/.ssh/id_rsa"
+
+		adm.vm.provision 'install-iml-locks-and-testing',
+		type: 'shell', run: 'never',
+		inline: <<-SHELL
+		 yum-config-manager --add-repo=https://copr.fedorainfracloud.org/coprs/managerforlustre/iml-locks-and-actions-devel/repo/epel-7/managerforlustre-iml-locks-and-actions-devel-epel-7.repo
+		 yum-clean-all
+		 yum install -y iml-gui
+		 yum install -y iml-old-gui
+		 yum install -y rust-iml-warp-drive
+		 yum install -y iml-wasm-components
+		 cp /vagrant/iml-4.0.10.tar.gz /tmp
+		 cd /tmp
+		 tar xvf iml-4.0.10.tar.gz
+		SHELL
 	end
 
 	#
@@ -168,6 +182,13 @@ __EOF"
 				ip: "#{subnet_prefix}.#{xnet_idx}.1#{mds_idx}",
 				netmask: "255.255.255.0",
 				auto_config: false
+
+			mds.vm.provision 'fix-repo-file',
+				type: 'shell', run: 'never',
+				inline: <<-SHELL
+				sed -i /proxy=_none_/d /etc/yum.repos.d/Intel-Lustre-Agent.repo
+			SHELL
+
 			# Increment the "crossover" subnet number so that
 			# each HA pair has a unique "crossover" subnet
 			if mds_idx % 2 == 0
@@ -255,6 +276,12 @@ __EOF"
 				ip: "#{subnet_prefix}.#{xnet_idx}.2#{oss_idx}",
 				netmask: "255.255.255.0",
 				auto_config: false
+
+			oss.vm.provision 'fix-repo-file',
+				type: 'shell', run: 'never',
+				inline: <<-SHELL
+				sed -i /proxy=_none_/d /etc/yum.repos.d/Intel-Lustre-Agent.repo
+			SHELL
 
 			# Increment the "crossover" subnet number so that
 			# each HA pair has a unique "crossover" subnet
