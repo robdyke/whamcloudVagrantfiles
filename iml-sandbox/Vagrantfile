@@ -134,6 +134,81 @@ __EOF
                        yum install -y /integrated-manager-for-lustre/_topdir/RPMS/noarch/python2-iml-manager-*
                        chroma-config setup admin lustre localhost --no-dbspace-check
                      SHELL
+
+    adm.vm.provision 'install-stratagem-components',
+                     type: 'shell', run: 'never',
+                      inline: <<-SHELL
+set -x
+# Install action runner and stratagem service from the stratagem-devel copr repo
+yum -y copr enable managerforlustre/stratagem-devel
+yum -y install rust-iml-agent-comms rust-iml-stratagem rust-iml-action-runner
+systemctl enable iml-agent-comms.service iml-action-runner.socket iml-stratagem.service
+
+# fixup repolinks in lustre-server.repo and lustre-client.repo
+sed -i 's|^baseurl=https:\/\/downloads\.whamcloud\.com\/public\/lustre\/.*|baseurl=https:\/\/build\.whamcloud\.com\/jobs-pub\/lustre-reviews\/configurations\/axis-arch\/x86_64\/axis-build_type\/client\/axis-distro\/el7\.6\/axis-ib_stack\/inkernel\/builds\/63298\/archive\/artifacts\/|' /usr/share/chroma-manager/lustre-client.repo
+sed -i 's|^baseurl=https:\/\/downloads\.whamcloud\.com\/public\/lustre\/.*|baseurl=https:\/\/build\.whamcloud\.com\/jobs-pub\/lustre-reviews\/configurations\/axis-arch\/x86_64\/axis-build_type\/server\/axis-distro\/el7\.6\/axis-ib_stack\/inkernel\/builds\/63298\/archive\/artifacts\/|' /usr/share/chroma-manager/lustre-server.repo
+
+# Delete an existing add of the managerforlustre-lnet-fix repo
+sed -i '/managerforlustre-lnet-fix/,+9d' /usr/share/chroma-manager/base.repo
+
+# Add the managerforlustre-lnet-fix repo to base.repo
+echo "[managerforlustre-lnet-fix]
+name=Copr repo for lnet-fix owned by managerforlustre
+baseurl=https://copr-be.cloud.fedoraproject.org/results/managerforlustre/lnet-fix/epel-7-$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://copr-be.cloud.fedoraproject.org/results/managerforlustre/lnet-fix/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1" >> /usr/share/chroma-manager/base.repo
+
+# Install stratagem repos
+rm -rf /var/lib/chroma/repo/stratagem-server
+rm /usr/share/chroma-manager/stratagem-server.repo
+chroma-config repos install stratagem-server /vagrant/stratagem-server.tar.gz
+
+# Add stratagem profile
+echo '{
+  "ui_name": "Stratagem Policy Engine Server",
+  "ui_description": "A server running the Stratagem Policy Engine",
+  "managed": true,
+  "worker": false,
+  "name": "stratagem_server",
+  "initial_state": "managed",
+  "ntp": true,
+  "corosync": false,
+  "corosync2": true,
+  "pacemaker": true,
+  "repolist": ["base", "lustre-server", "stratagem-server"],
+  "packages": [
+  "python2-iml-agent-management",
+  "kernel-devel-lustre",
+  "pcs",
+  "fence-agents",
+  "fence-agents-virsh",
+  "lustre-resource-agents",
+  "lustre-ldiskfs-zfs",
+  "libyaml",
+  "PyYAML",
+  "python-dateutil",
+  "python-flask",
+  "python-gevent",
+  "python-requests",
+  "python-zmq",
+  "python2-filelock",
+  "protobuf-python",
+  "pytz",
+  "rsync",
+  "zeromq3",
+  "lipe",
+  "lipe-pylustre"
+  ]
+}' > /tmp/stratagem-server.json
+chroma-config profile register /tmp/stratagem-server.json
+rm /tmp/stratagem-server.json
+SHELL
+             
   end
 
   #
@@ -185,6 +260,8 @@ __EOF
       install_lustre_ldiskfs mds
 
       install_ldiskfs_no_iml mds
+
+      install_stratagem_components mds
 
       pool_name = (i == 1 ? 'mgt' : 'mdt')
 
@@ -303,6 +380,8 @@ SHELL
       install_lustre_ldiskfs oss
 
       install_ldiskfs_no_iml oss
+
+      install_stratagem_components oss
 
       config.vm.provision 'create-pools',
                           type: 'shell',
@@ -589,4 +668,12 @@ def create_iscsi_disks(vbox, name)
                    "VBoxInternal/Devices/ahci/0/Config/Port#{port}/SerialNumber",
                    name.ljust(20, '0')]
   end
+end
+
+def install_stratagem_components(node)
+  node.vm.provision 'install-stratagem-components', type: 'shell', run: 'never', inline: <<-SHELL
+yum -y copr enable managerforlustre/stratagem-devel
+yum install -y rust-iml-agent
+systemctl enable rust-iml-agent.path
+SHELL
 end
