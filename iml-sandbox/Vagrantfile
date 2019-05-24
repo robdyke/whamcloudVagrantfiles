@@ -230,7 +230,9 @@ __EOF
 <<-SHELL
   cat > /etc/udev/rules.d/99-lustre-volume.rules <<EOF
   SUBSYSTEM=="block", ATTR{size}=="1048576", SYMLINK+="mgt"
-  SUBSYSTEM=="block", ATTR{size}=="10485760", SYMLINK+="mdt"
+  SUBSYSTEM=="block", ATTR{size}=="10485760", SYMLINK+="mdt1"
+  SUBSYSTEM=="block", ATTR{size}=="10485760", SYMLINK+="mdt2"
+  SUBSYSTEM=="block", ATTR{size}=="10485760", SYMLINK+="mdt3"
 EOF
 
   udevadm trigger --action=change --subsystem-match=block
@@ -578,9 +580,9 @@ def create_iscsi_disks(vbox, name)
 
   [
     %w[mgt 512],
-    %w[mdt0 5120],
     %w[mdt1 5120],
     %w[mdt2 5120],
+    %w[mdt3 5120],
   ].concat(osts).each_with_index do |(name, size), i|
     file_to_disk = "#{dir}/#{name}.vdi"
     port = (i + 1).to_s
